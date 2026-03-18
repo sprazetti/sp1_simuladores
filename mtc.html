@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioStat Razetti: Laboratorio Integral</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --ucv-blue: #002855;
+            --ucv-gold: #F2A900;
+            --glass: rgba(255, 255, 255, 0.9);
+            --bg-light: #f0f4f8;
+            --text: #1a202c;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #d7e3ec 100%);
+            color: var(--text);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        /* Header & Navegación */
+        header {
+            background: var(--ucv-blue);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-bottom: 4px solid var(--ucv-gold);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .tabs { display: flex; gap: 10px; }
+        .tab-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+        .tab-btn.active { background: var(--ucv-gold); color: var(--ucv-blue); }
+
+        /* Layout General */
+        .container {
+            display: none; /* Oculto por defecto */
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease;
+        }
+        .container.active { display: block; }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        /* Estilos Comunes de Tarjetas */
+        .sidebar {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 40, 85, 0.1);
+            height: fit-content;
+        }
+
+        .chart-container, .control-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        /* Info Boxes Estilo Razetti */
+        .info-box {
+            grid-column: span 2;
+            background: var(--ucv-blue);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 20px;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            border-left: 10px solid var(--ucv-gold);
+        }
+
+        .formula-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: monospace;
+            border: 1px dashed var(--ucv-gold);
+            min-width: 200px;
+        }
+
+        /* Estilos de Teoría */
+        .scale-nav-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .scale-btn {
+            background: white;
+            border: 2px solid var(--ucv-blue);
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .scale-btn.active { background: var(--ucv-blue); color: white; }
+
+        input[type=range] { width: 100%; accent-color: var(--ucv-blue); cursor: pointer; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        svg { width: 100%; overflow: visible; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-area">
+        <i class="fas fa-university"></i>
+        <h1>BioStat Razetti <span style="font-weight: 300; font-size: 0.9rem; opacity: 0.8;">| 2026</span></h1>
+    </div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('analisis')"><i class="fas fa-chart-line"></i> Análisis de Datos</button>
+        <button class="tab-btn" onclick="switchTab('teoria')"><i class="fas fa-book-medical"></i> Teoría de Escalas</button>
+    </div>
+</header>
+
+<div id="tab-analisis" class="container active">
+    <div class="main-layout">
+        <aside class="sidebar">
+            <h2 style="color: var(--ucv-blue);"><i class="fas fa-sliders-h"></i> Parámetros</h2>
+            <div class="control-card">
+                <label>Muestra (n): <b id="val-n">150</b></label>
+                <input type="range" id="input-n" min="20" max="800" value="150">
+            </div>
+            <div class="control-card">
+                <label>Media (μ): <b id="val-media">210</b> mg/dL</label>
+                <input type="range" id="input-media" min="150" max="280" value="210">
+            </div>
+            <div class="control-card">
+                <label>Desviación (σ): <b id="val-sd">35</b></label>
+                <input type="range" id="input-sd" min="10" max="70" value="35">
+            </div>
+            <div style="font-size: 0.85rem; color: #555; background: #fffbe6; padding: 1rem; border-radius: 10px; border: 1px solid #ffe58f;">
+                <i class="fas fa-lightbulb"></i> <b>Tip Razetti:</b> Si σ es muy alta, la media pierde representatividad. ¡Ojo con el sesgo!
+            </div>
+        </aside>
+
+        <main class="charts-grid">
+            <div class="info-box">
+                <div style="flex: 1;">
+                    <h3><i class="fas fa-chess-knight"></i> Selección Estratégica de TC</h3>
+                    <p>Determina si usas <b>Media</b> o <b>Mediana</b> observando la forma del histograma y el boxplot.</p>
+                </div>
+                <div class="formula-badge">
+                    CV = (σ / x̄) * 100% <br>
+                    <i>Si CV > 30%, usar Mediana</i>
+                </div>
+            </div>
+            <div class="chart-container"><h3><i class="fas fa-chart-bar"></i> Histograma</h3><svg id="hist" height="250"></svg></div>
+            <div class="chart-container"><h3><i class="fas fa-box"></i> Boxplot</h3><svg id="box" height="250"></svg></div>
+            <div class="chart-container"><h3><i class="fas fa-braille"></i> Densidad de Puntos</h3><svg id="dots" height="200"></svg></div>
+            <div class="chart-container"><h3><i class="fas fa-chart-scatter"></i> Edad vs Biomarcador</h3><svg id="scatter" height="250"></svg></div>
+        </main>
+    </div>
+</div>
+
+<div id="tab-teoria" class="container">
+    <section class="chart-container" style="margin-bottom: 2rem;">
+        <h2 style="color: var(--ucv-blue);"><i class="fas fa-microscope"></i> Del Universo a la Muestra</h2>
+        <div style="display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; justify-content: center;">
+            <svg id="venn-sampling" width="500" height="400"></svg>
+            <div id="sampling-info" style="max-width: 400px; background: #f8fafc; padding: 2rem; border-radius: 20px; border: 1px solid #e2e8f0;">
+                <h3 id="sampling-title" style="color:var(--ucv-blue)">Explora el diagrama</h3>
+                <p id="sampling-desc">Pasa el cursor sobre los círculos para entender la jerarquía del muestreo clínico.</p>
+                <button onclick="animateSampling()" style="background: var(--ucv-gold); color: var(--ucv-blue); border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%;">
+                    <i class="fas fa-vial"></i> Simular Selección Aleatoria
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="chart-container">
+        <h2 style="color: var(--ucv-blue); text-align: center;"><i class="fas fa-layer-group"></i> Laboratorio Dinámico de Escalas</h2>
+        <div class="scale-nav-container">
+            <button class="scale-btn active" onclick="showScale('nominal', this)">Nominal</button>
+            <button class="scale-btn" onclick="showScale('ordinal', this)">Ordinal</button>
+            <button class="scale-btn" onclick="showScale('intervalo', this)">Intervalo</button>
+            <button class="scale-btn" onclick="showScale('razon', this)">Razón</button>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+            <div style="background: #f1f5f9; border-radius: 20px; min-height: 350px; display: flex; align-items: center; justify-content: center;">
+                <svg id="scale-viz" width="600" height="300"></svg>
+            </div>
+            <div style="background: white; padding: 1.5rem; border-left: 5px solid var(--ucv-gold);">
+                <h3 id="scale-name" style="color: var(--ucv-blue);">Escala Nominal</h3>
+                <p id="scale-definition">Solo clasifica elementos en categorías excluyentes.</p>
+                <div class="formula-badge" id="scale-math" style="background: #f8fafc; color: var(--ucv-blue);">Moda y Frecuencias</div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    // --- NAVEGACIÓN ---
+    function switchTab(tabId) {
+        document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        if(tabId === 'teoria') { initVenn(); showScale('nominal'); }
+    }
+
+    // --- MÓDULO CUANTITATIVO ---
+    const margin = {top: 20, right: 30, bottom: 40, left: 45};
+    const width = 500 - margin.left - margin.right;
+    const height = 250 - margin.top - margin.bottom;
+
+    function generateData(n, mu, sigma) {
+        return Array.from({length: n}, () => {
+            let u = 0, v = 0; while(u === 0) u = Math.random(); while(v === 0) v = Math.random();
+            let val = (Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v)) * sigma + mu;
+            return { val: Math.max(100, val), edad: 18 + Math.random() * 62 };
+        });
+    }
+
+    function update() {
+        const n = +document.getElementById('input-n').value;
+        const mu = +document.getElementById('input-media').value;
+        const sd = +document.getElementById('input-sd').value;
+        document.getElementById('val-n').innerText = n;
+        document.getElementById('val-media').innerText = mu;
+        document.getElementById('val-sd').innerText = sd;
+
+        const data = generateData(n, mu, sd);
+        renderCharts(data);
+    }
+
+    function renderCharts(data) {
+        // Histograma
+        const svgH = d3.select("#hist"); svgH.selectAll("*").remove();
+        const gH = svgH.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        const xH = d3.scaleLinear().domain([100, 350]).range([0, width]);
+        const bins = d3.bin().domain(xH.domain()).thresholds(15)(data.map(d => d.val));
+        const yH = d3.scaleLinear().domain([0, d3.max(bins, d => d.length)]).range([height, 0]);
+        gH.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xH));
+        gH.selectAll("rect").data(bins).enter().append("rect")
+            .attr("x", d => xH(d.x0)+1).attr("width", d => Math.max(0, xH(d.x1)-xH(d.x0)-1))
+            .attr("y", height).attr("height", 0).attr("fill", "#002855")
+            .transition().duration(800).attr("y", d => yH(d.length)).attr("height", d => height - yH(d.length));
+
+        // Boxplot Simplificado
+        const svgB = d3.select("#box"); svgB.selectAll("*").remove();
+        const gB = svgB.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        const sorted = data.map(d => d.val).sort(d3.ascending);
+        const q1 = d3.quantile(sorted, .25), median = d3.quantile(sorted, .5), q3 = d3.quantile(sorted, .75);
+        const xB = d3.scaleLinear().domain([100, 350]).range([0, width]);
+        gB.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xB));
+        gB.append("rect").attr("x", xB(q1)).attr("y", 50).attr("height", 60).attr("width", xB(q3)-xB(q1))
+            .attr("fill", "#F2A900").attr("stroke", "#002855");
+        gB.append("line").attr("x1", xB(median)).attr("x2", xB(median)).attr("y1", 50).attr("y2", 110).attr("stroke", "white").attr("stroke-width", 3);
+        
+        // Scatter
+        const svgS = d3.select("#scatter"); svgS.selectAll("*").remove();
+        const gS = svgS.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        const xS = d3.scaleLinear().domain([18, 80]).range([0, width]);
+        const yS = d3.scaleLinear().domain([100, 350]).range([height, 0]);
+        gS.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xS));
+        gS.append("g").call(d3.axisLeft(yS));
+        gS.selectAll("circle").data(data.slice(0, 100)).enter().append("circle")
+            .attr("cx", d => xS(d.edad)).attr("cy", d => yS(d.val)).attr("r", 4).attr("fill", "#002855").attr("opacity", 0.6);
+            
+        // Dots
+        const svgD = d3.select("#dots"); svgD.selectAll("*").remove();
+        const gD = svgD.append("g").attr("transform", `translate(${margin.left},20)`);
+        gD.selectAll("circle").data(data.slice(0, 150)).enter().append("circle")
+            .attr("cx", d => xH(d.val)).attr("cy", () => Math.random()*100).attr("r", 3).attr("fill", "#002855").attr("opacity", 0.4);
+    }
+
+    // --- MÓDULO DE TEORÍA ---
+    function initVenn() {
+        const svg = d3.select("#venn-sampling"); svg.selectAll("*").remove();
+        const circles = [
+            { r: 160, name: "Universo", color: "#e2e8f0", desc: "Todos los humanos con riesgo cardiovascular en el mundo." },
+            { r: 110, name: "Población", color: "#cbd5e1", desc: "Pacientes que asisten a la consulta del Hospital Universitario." },
+            { r: 60, name: "Muestra", color: "#F2A900", desc: "Los 150 sujetos seleccionados para el análisis final." }
+        ];
+        const g = svg.append("g").attr("transform", "translate(250, 200)");
+        g.selectAll("circle").data(circles).enter().append("circle")
+            .attr("r", d => d.r).attr("fill", d => d.color).attr("stroke", "#002855").attr("stroke-width", 2).style("opacity", 0.7)
+            .on("mouseover", function(e, d) {
+                d3.select(this).attr("stroke-width", 5);
+                document.getElementById("sampling-title").innerText = d.name;
+                document.getElementById("sampling-desc").innerText = d.desc;
+            })
+            .on("mouseout", function() { d3.select(this).attr("stroke-width", 2); });
+        
+        for(let i=0; i<150; i++) {
+            g.append("circle").attr("class", "p").attr("cx", (Math.random()-0.5)*300).attr("cy", (Math.random()-0.5)*300).attr("r", 2).attr("fill", "#002855").attr("opacity", 0.3);
+        }
+    }
+
+    function animateSampling() {
+        d3.selectAll(".p").transition().duration(1000)
+            .attr("cx", (Math.random()-0.5)*100).attr("cy", (Math.random()-0.5)*100).attr("fill", "#F2A900").attr("opacity", 1);
+    }
+
+    const scaleData = {
+        nominal: { name: "Escala Nominal", def: "Clasifica sin orden. Ejemplo: Sexo, Grupo Sanguíneo, Estado Civil.", math: "Estadísticos: Frecuencia y Moda", 
+            anim: (g) => {
+                const colors = ["#ef4444", "#3b82f6", "#10b981"];
+                g.selectAll("circle").data(d3.range(30)).enter().append("circle")
+                    .attr("r", 12).attr("fill", (d,i) => colors[i%3])
+                    .attr("cx", (d,i) => (i%3)*150 + 100).attr("cy", 0)
+                    .transition().duration(800).attr("cy", (d,i) => 100 + (Math.random()*100));
+            }
+        },
+        ordinal: { name: "Escala Ordinal", def: "Existe un orden o jerarquía. Ejemplo: Intensidad del dolor, Grado de instrucción.", math: "Estadísticos: Mediana y Percentiles",
+            anim: (g) => {
+                g.selectAll("rect").data([60, 120, 180]).enter().append("rect")
+                    .attr("x", (d,i) => i*150 + 100).attr("y", d => 250-d).attr("width", 60).attr("height", d => d).attr("fill", "#F2A900");
+                g.selectAll("text").data(["Leve", "Mod", "Sev"]).enter().append("text")
+                    .attr("x", (d,i) => i*150 + 110).attr("y", 270).text(d => d).style("font-weight", "bold");
+            }
+        },
+        intervalo: { name: "Escala de Intervalo", def: "El cero es relativo (arbitrario). Ejemplo: Temperatura (°C), Coeficiente Intelectual.", math: "Estadísticos: Media y Desviación Estándar",
+            anim: (g) => {
+                g.append("line").attr("x1", 50).attr("y1", 150).attr("x2", 550).attr("y2", 150).attr("stroke", "#002855").attr("stroke-width", 2);
+                g.selectAll("circle").data([-10, 0, 10, 20]).enter().append("circle")
+                    .attr("cx", (d,i) => i*130 + 100).attr("cy", 150).attr("r", 8).attr("fill", d => d==0 ? "red" : "#002855");
+                g.selectAll("text").data(["-10°", "0° (Relativo)", "10°", "20°"]).enter().append("text")
+                    .attr("x", (d,i) => i*130 + 70).attr("y", 180).text(d => d);
+            }
+        },
+        razon: { name: "Escala de Razón", def: "El cero es absoluto (ausencia). Ejemplo: Peso, Talla, Concentración de Hemoglobina.", math: "Estadísticos: Todos los paramétricos + Coef. Variación",
+            anim: (g) => {
+                g.append("line").attr("x1", 50).attr("y1", 200).attr("x2", 550).attr("y2", 200).attr("stroke", "#002855").attr("stroke-width", 4);
+                g.append("circle").attr("cx", 50).attr("cy", 200).attr("r", 10).attr("fill", "#F2A900");
+                g.append("text").attr("x", 40).attr("y", 235).text("0 (NADA)").style("font-weight", "bold");
+                g.selectAll("circle.p").data(d3.range(10)).enter().append("circle").attr("cx", (d,i) => 100 + i*45).attr("cy", 200).attr("r", 5).attr("fill", "#002855");
+            }
+        }
+    };
+
+    function showScale(type, btn) {
+        if(btn) {
+            document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        const svg = d3.select("#scale-viz"); svg.selectAll("*").remove();
+        const data = scaleData[type];
+        document.getElementById("scale-name").innerText = data.name;
+        document.getElementById("scale-definition").innerText = data.def;
+        document.getElementById("scale-math").innerText = data.math;
+        data.anim(svg.append("g"));
+    }
+
+    // Inicialización
+    document.querySelectorAll('#tab-analisis input').forEach(i => i.addEventListener('input', update));
+    window.onload = () => { update(); };
+</script>
+</body>
+</html>
