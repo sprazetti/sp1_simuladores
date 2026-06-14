@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Precisión: MTC y Error Estándar</title>
+    <!-- Importamos Plotly.js para precisión estadística real -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        :root {
+            --bg-principal: #f8fafc;
+            --tarjeta: #ffffff;
+            --texto-primario: #1e293b;
+            --texto-secundario: #64748b;
+            --primario: #2563eb;
+            --primario-hover: #1d4ed8;
+            --lineas: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+
+        body {
+            background-color: var(--bg-principal);
+            color: var(--texto-primario);
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 950px;
+            background: var(--tarjeta);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+        p.descripcion { color: var(--texto-secundario); font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5; }
+
+        .panel-control {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .grupo-control { display: flex; flex-direction: column; gap: 0.5rem; }
+        label { font-size: 0.85rem; font-weight: 600; }
+        .valores-control { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--texto-secundario); }
+        input[type="range"] { width: 100%; accent-color: var(--primario); cursor: pointer; }
+
+        .btn-muestreo {
+            background-color: var(--primario);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            align-self: flex-end;
+            height: 40px;
+        }
+        .btn-muestreo:hover { background-color: var(--primario-hover); }
+
+        .panel-metricas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .metrica {
+            border: 1px solid var(--lineas);
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .metrica.destacada { border-color: var(--primario); background: #eff6ff; }
+        .metrica-titulo { font-size: 0.75rem; text-transform: uppercase; color: var(--texto-secundario); margin-bottom: 0.3rem; }
+        .metrica-valor { font-size: 1.5rem; font-weight: bold; }
+
+        .grafico-contenedor {
+            width: 100%;
+            height: 250px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    <h1>Simulador Estadístico de Alta Precisión</h1>
+    <p class="descripcion">
+        Los gráficos generan histogramas matemáticamente precisos. Observa cómo, independientemente de la alta dispersión de la población (arriba), la distribución de las medias (abajo) se comprime hacia el centro real a medida que aumentas el tamaño de muestra ($n$).
+    </p>
+
+    <div class="panel-control">
+        <div class="grupo-control">
+            <div class="valores-control">
+                <label>Tamaño de Muestra (n)</label>
+                <span id="valor-n">30</span>
+            </div>
+            <input type="range" id="slider-n" min="10" max="300" value="30">
+        </div>
+
+        <div class="grupo-control">
+            <div class="valores-control">
+                <label>Variabilidad Poblacional (DE)</label>
+                <span id="valor-sd">15</span>
+            </div>
+            <input type="range" id="slider-sd" min="5" max="40" value="15">
+        </div>
+
+        <button class="btn-muestreo" id="btn-muestrear">Tomar 100 Muestras</button>
+    </div>
+
+    <div class="panel-metricas">
+        <div class="metrica">
+            <div class="metrica-titulo">Desviación Estándar (σ)</div>
+            <div class="metrica-valor" id="metric-sd">15.0</div>
+        </div>
+        <div class="metrica destacada">
+            <div class="metrica-titulo">Error Estándar Calculado (SEM)</div>
+            <div class="metrica-valor" id="metric-sem">2.74</div>
+        </div>
+    </div>
+
+    <!-- Contenedores para los gráficos de Plotly -->
+    <div id="graficoPoblacion" class="grafico-contenedor"></div>
+    <div id="graficoMedias" class="grafico-contenedor"></div>
+</div>
+
+<script>
+    // Parámetros y variables globales
+    const MEDIA_POBLACIONAL = 100;
+    let n = 30;
+    let sd = 15;
+    let ultimaMuestra = [];
+    let historialMedias = [];
+
+    // Elementos DOM
+    const sliderN = document.getElementById('slider-n');
+    const sliderSD = document.getElementById('slider-sd');
+    const valorN = document.getElementById('valor-n');
+    const valorSD = document.getElementById('valor-sd');
+    const metricSD = document.getElementById('metric-sd');
+    const metricSEM = document.getElementById('metric-sem');
+
+    // Generador Normal (Box-Muller)
+    function randomNormal(mean, stdev) {
+        let u = 1 - Math.random();
+        let v = Math.random();
+        let z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        return z * stdev + mean;
+    }
+
+    // Configuración base de Plotly para mantener escalas fijas y comparar
+    const layoutBase = {
+        margin: { t: 30, b: 30, l: 40, r: 20 },
+        xaxis: { range: [40, 160], fixedrange: true, zeroline: false },
+        yaxis: { fixedrange: true, visible: false },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        shapes: [{
+            type: 'line', x0: 100, x1: 100, y0: 0, y1: 1, xref: 'x', yref: 'paper',
+            line: { color: 'red', width: 2, dash: 'dot' }
+        }]
+    };
+
+    function inicializarGraficos() {
+        Plotly.newPlot('graficoPoblacion', [], { ...layoutBase, title: { text: '1. Variabilidad Individual (Datos de 1 Muestra)', font: {size: 14} } }, {displayModeBar: false});
+        Plotly.newPlot('graficoMedias', [], { ...layoutBase, title: { text: '2. Histograma de Medias (Precisión del Centro)', font: {size: 14} } }, {displayModeBar: false});
+    }
+
+    function ejecutarSimulacion(cantidad = 100, limpiarHistorial = false) {
+        if(limpiarHistorial) historialMedias = [];
+
+        for (let i = 0; i < cantidad; i++) {
+            let muestraActual = [];
+            let suma = 0;
+            for (let j = 0; j < n; j++) {
+                let valor = randomNormal(MEDIA_POBLACIONAL, sd);
+                muestraActual.push(valor);
+                suma += valor;
+            }
+            historialMedias.push(suma / n);
+            if (i === cantidad - 1) ultimaMuestra = muestraActual;
+        }
+
+        // Evitar que el array crezca infinitamente para no colapsar la memoria
+        if(historialMedias.length > 2000) historialMedias = historialMedias.slice(-2000);
+
+        actualizarGraficos();
+    }
+
+    function actualizarGraficos() {
+        // Trazo 1: Histograma de la muestra individual
+        const trace1 = {
+            x: ultimaMuestra,
+            type: 'histogram',
+            marker: { color: 'rgba(37, 99, 235, 0.7)', line: {color: 'white', width: 1} },
+            autobinx: false,
+            xbins: { start: 40, end: 160, size: sd > 20 ? 3 : 2 }
+        };
+
+        // Trazo 2: Histograma del historial de medias
+        const trace2 = {
+            x: historialMedias,
+            type: 'histogram',
+            marker: { color: 'rgba(16, 185, 129, 0.8)', line: {color: 'white', width: 1} },
+            autobinx: false,
+            // Las medias requieren bins más pequeños para mostrar la precisión
+            xbins: { start: 40, end: 160, size: 0.5 }
+        };
+
+        Plotly.react('graficoPoblacion', [trace1], { ...layoutBase, title: { text: `1. Variabilidad Individual (n = ${n})`, font: {size: 14} } });
+        Plotly.react('graficoMedias', [trace2], { ...layoutBase, title: { text: `2. Distribución de las Medias Calculadas`, font: {size: 14} } });
+    }
+
+    function leerParametros() {
+        n = parseInt(sliderN.value);
+        sd = parseInt(sliderSD.value);
+        
+        valorN.textContent = n;
+        valorSD.textContent = sd;
+        metricSD.textContent = sd.toFixed(1);
+        metricSEM.textContent = (sd / Math.sqrt(n)).toFixed(2);
+    }
+
+    // Eventos
+    document.getElementById('slider-n').addEventListener('input', () => { leerParametros(); ejecutarSimulacion(1, true); });
+    document.getElementById('slider-sd').addEventListener('input', () => { leerParametros(); ejecutarSimulacion(1, true); });
+    document.getElementById('btn-muestrear').addEventListener('click', () => { ejecutarSimulacion(100, false); });
+
+    // Inicio
+    inicializarGraficos();
+    leerParametros();
+    ejecutarSimulacion(100, true);
+</script>
+
+</body>
+</html>
