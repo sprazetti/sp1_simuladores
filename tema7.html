@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Medidas Relativas - Salud Pública I (UCV)</title>
+    <!-- Tailwind CSS para diseño rápido y estilizado -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-btn.active {
+            border-color: #f59e0b;
+            color: #f59e0b;
+            background-color: #fef3c7;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Encabezado Institucional -->
+    <header class="bg-gradient-to-r from-blue-900 to-indigo-950 text-white shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+            <div>
+                <h1 class="text-xs uppercase tracking-widest text-amber-400 font-bold">Universidad Central de Venezuela</h1>
+                <p class="text-sm text-gray-300">Facultad de Medicina • Escuela "Luis Razetti"</p>
+                <p class="text-lg font-semibold mt-1 text-white">Cátedra de Salud Pública I</p>
+            </div>
+            <div class="bg-amber-500 text-slate-900 font-black px-4 py-2 rounded-lg shadow-sm text-sm tracking-wide">
+                SIMULADOR DE MEDIDAS RELATIVAS
+            </div>
+        </div>
+    </header>
+
+    <!-- Introducción -->
+    <div class="max-w-6xl mx-auto px-4 mt-6 w-full">
+        <div class="bg-yellow-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-xs">
+            <p class="italic text-gray-700 text-sm md:text-base">
+                "Un número absoluto en salud pública no dice nada por sí solo. Para que un dato se convierta en indicador, requiere un marco de referencia espacial, temporal o poblacional." 
+                <span class="block font-semibold text-xs mt-1 text-gray-500">— Fayad Camel V.</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal / Panel del Simulador -->
+    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-1">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+            
+            <!-- Menú de Pestañas (Navegación del Estudiante) -->
+            <div class="flex flex-wrap border-b border-gray-200 bg-gray-50">
+                <button onclick="switchTab(event, 'razon')" class="tab-btn active px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-amber-600 transition-all cursor-pointer">Razón</button>
+                <button onclick="switchTab(event, 'proporcionalidad')" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-amber-600 transition-all cursor-pointer">Proporción</button>
+                <button onclick="switchTab(event, 'porcentaje')" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-amber-600 transition-all cursor-pointer">Porcentaje</button>
+                <button onclick="switchTab(event, 'indice')" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-amber-600 transition-all cursor-pointer">Número Índice</button>
+                <button onclick="switchTab(event, 'eficiencia')" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-amber-600 transition-all cursor-pointer">Eficiencia</button>
+                <button onclick="switchTab(event, 'elasticidad')" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent hover:text-amber-600 transition-all cursor-pointer">Elasticidad</button>
+            </div>
+
+            <!-- Contenidos de las Pestañas -->
+            <div class="p-6">
+
+                <!-- 1. RAZÓN -->
+                <div id="razon" class="tab-content active space-y-4">
+                    <div class="border-b pb-2">
+                        <h2 class="text-xl font-bold text-blue-900">Razón</h2>
+                        <p class="text-sm text-gray-600">Comparación por cociente de dos magnitudes independientes. El numerador <strong>no</strong> está incluido en el denominador.</p>
+                        <div class="mt-2 text-center bg-gray-100 p-2 font-mono rounded text-lg text-indigo-900 font-bold">Fórmula: Razón = A / B</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 p-4 rounded-lg space-y-3">
+                            <h3 class="font-bold text-sm text-gray-700 uppercase">Simulación Práctica (Aspergilosis)</h3>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Casos sin diagnosticar/tratar (B):</label>
+                                <input type="number" id="razon-b" value="5" class="w-full p-2 border rounded bg-white text-sm" oninput="calcRazon()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Casos tratados (A):</label>
+                                <input type="number" id="razon-a" value="1" class="w-full p-2 border rounded bg-white text-sm" oninput="calcRazon()">
+                            </div>
+                        </div>
+                        <div class="bg-amber-50/50 p-4 rounded-lg flex flex-col justify-between border border-amber-100">
+                            <h3 class="font-bold text-sm text-amber-800 uppercase">Interpretación del Resultado</h3>
+                            <div class="text-center my-3">
+                                <span class="text-xs text-gray-500 block">Resultado exacto:</span>
+                                <span id="razon-res" class="text-3xl font-black text-amber-600">0.20</span>
+                            </div>
+                            <p id="razon-txt" class="text-sm text-gray-700 bg-white p-2 rounded border border-amber-200">Por cada paciente tratado, hay 5 sin diagnosticar ni tratar (Relación 1:5).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. PROPORCIÓN -->
+                <div id="proporcionalidad" class="tab-content space-y-4">
+                    <div class="border-b pb-2">
+                        <h2 class="text-xl font-bold text-blue-900">Proporción</h2>
+                        <p class="text-sm text-gray-600">El numerador sí está incluido en el denominador. Expresa la parte de un todo. Su valor varía estrictamente entre 0 y 1. No tiene unidades.</p>
+                        <div class="mt-2 text-center bg-gray-100 p-2 font-mono rounded text-lg text-indigo-900 font-bold">Fórmula: Proporción = A / (A + B)</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 p-4 rounded-lg space-y-3">
+                            <h3 class="font-bold text-sm text-gray-700 uppercase">Ejemplo: Letalidad o Prevalencia</h3>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Numerador - Evento de interés (A):</label>
+                                <input type="number" id="prop-a" value="20" class="w-full p-2 border rounded bg-white text-sm" oninput="calcProp()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Resto de la población (B):</label>
+                                <input type="number" id="prop-b" value="80" class="w-full p-2 border rounded bg-white text-sm" oninput="calcProp()">
+                            </div>
+                        </div>
+                        <div class="bg-amber-50/50 p-4 rounded-lg flex flex-col justify-between border border-amber-100">
+                            <h3 class="font-bold text-sm text-amber-800 uppercase">Interpretación del Resultado</h3>
+                            <div class="text-center my-3">
+                                <span class="text-xs text-gray-500 block">Denominador total (A+B): <span id="prop-total" class="font-bold">100</span></span>
+                                <span id="prop-res" class="text-3xl font-black text-amber-600">0.2000</span>
+                            </div>
+                            <p id="prop-txt" class="text-sm text-gray-700 bg-white p-2 rounded border border-amber-200">El evento representa una fracción de 0.20 del total de la población estudiada.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. PORCENTAJE -->
+                <div id="porcentaje" class="tab-content space-y-4">
+                    <div class="border-b pb-2">
+                        <h2 class="text-xl font-bold text-blue-900">Porcentaje</h2>
+                        <p class="text-sm text-gray-600">La proporción expresada en una base estandarizada de 100 personas para facilitar la intuición biológica y social.</p>
+                        <div class="mt-2 text-center bg-gray-100 p-2 font-mono rounded text-lg text-indigo-900 font-bold">Fórmula: Porcentaje = [ A / (A + B) ] × 100%</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 p-4 rounded-lg space-y-3">
+                            <h3 class="font-bold text-sm text-gray-700 uppercase">Ejemplo: Ocupación de Camas Hospitalarias</h3>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Camas Ocupadas (A):</label>
+                                <input type="number" id="per-a" value="45" class="w-full p-2 border rounded bg-white text-sm" oninput="calcPorcentaje()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Camas Disponibles Vacías (B):</label>
+                                <input type="number" id="per-b" value="15" class="w-full p-2 border rounded bg-white text-sm" oninput="calcPorcentaje()">
+                            </div>
+                        </div>
+                        <div class="bg-amber-50/50 p-4 rounded-lg flex flex-col justify-between border border-amber-100">
+                            <h3 class="font-bold text-sm text-amber-800 uppercase">Interpretación del Resultado</h3>
+                            <div class="text-center my-3">
+                                <span class="text-xs text-gray-500 block">Total Camas (A+B): <span id="per-total" class="font-bold">60</span></span>
+                                <span id="per-res" class="text-3xl font-black text-amber-600">75.0%</span>
+                            </div>
+                            <p id="per-txt" class="text-sm text-gray-700 bg-white p-2 rounded border border-amber-200">De cada 100 camas teóricas del centro de salud, 75 se encuentran ocupadas actualmente.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. NÚMERO ÍNDICE -->
+                <div id="indice" class="tab-content space-y-4">
+                    <div class="border-b pb-2">
+                        <h2 class="text-xl font-bold text-blue-900">Número Índice (Monitoreo Temporal)</h2>
+                        <p class="text-sm text-gray-600">Evalúa la variación de una variable a lo largo del tiempo o espacio, tomando como referencia un punto fijo (Periodo Base) asignándole el valor de 100.</p>
+                        <div class="mt-2 text-center bg-gray-100 p-2 font-mono rounded text-lg text-indigo-900 font-bold">Fórmula: Índice = (Valor Periodo Actual / Valor Periodo Base) × 100</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 p-4 rounded-lg space-y-3">
+                            <h3 class="font-bold text-sm text-gray-700 uppercase">Vigilancia Epidemiológica (Tuberculosis)</h3>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Casos en Año Base (Ej. Año anterior):</label>
+                                <input type="number" id="ind-base" value="120" class="w-full p-2 border rounded bg-white text-sm" oninput="calcIndice()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Casos en Año Actual (Ej. Año bajo estudio):</label>
+                                <input type="number" id="ind-actual" value="180" class="w-full p-2 border rounded bg-white text-sm" oninput="calcIndice()">
+                            </div>
+                        </div>
+                        <div class="bg-amber-50/50 p-4 rounded-lg flex flex-col justify-between border border-amber-100">
+                            <h3 class="font-bold text-sm text-amber-800 uppercase">Interpretación Temporal</h3>
+                            <div class="text-center my-3">
+                                <span class="text-xs text-gray-500 block">Índice Calculado:</span>
+                                <span id="ind-res" class="text-3xl font-black text-amber-600">150.0</span>
+                            </div>
+                            <p id="ind-txt" class="text-sm text-gray-700 bg-white p-2 rounded border border-amber-200">Los casos han aumentado un 50% en comparación con el periodo base de referencia.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. COEFICIENTE DE EFICIENCIA -->
+                <div id="eficiencia" class="tab-content space-y-4">
+                    <div class="border-b pb-2">
+                        <h2 class="text-xl font-bold text-blue-900">Coeficiente de Eficiencia</h2>
+                        <p class="text-sm text-gray-600">Indicador administrativo que evalúa la relación matemática entre los resultados sanitarios logrados (outputs) y los recursos invertidos (inputs).</p>
+                        <div class="mt-2 text-center bg-gray-100 p-2 font-mono rounded text-lg text-indigo-900 font-bold">Fórmula: Eficiencia = Productos Obtenidos (Outputs) / Insumos Utilizados (Inputs)</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 p-4 rounded-lg space-y-3">
+                            <h3 class="font-bold text-sm text-gray-700 uppercase">Rendimiento de Consultas Médicas</h3>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Pacientes Atendidos en Total (Outputs):</label>
+                                <input type="number" id="ef-out" value="24" class="w-full p-2 border rounded bg-white text-sm" oninput="calcEficiencia()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">Horas de Consulta Médica (Inputs):</label>
+                                <input type="number" id="ef-in" value="6" class="w-full p-2 border rounded bg-white text-sm" oninput="calcEficiencia()">
+                            </div>
+                        </div>
+                        <div class="bg-amber-50/50 p-4 rounded-lg flex flex-col justify-between border border-amber-100">
+                            <h3 class="font-bold text-sm text-amber-800 uppercase">Análisis de Gestión</h3>
+                            <div class="text-center my-3">
+                                <span class="text-xs text-gray-500 block">Rendimiento:</span>
+                                <span id="ef-res" class="text-3xl font-black text-amber-600">4.0</span>
+                            </div>
+                            <p id="ef-txt" class="text-sm text-gray-700 bg-white p-2 rounded border border-amber-200">El profesional atiende un promedio de 4 pacientes por cada hora médica invertida.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. COEFICIENTE DE ELASTICIDAD -->
+                <div id="elasticidad" class="tab-content space-y-4">
+                    <div class="border-b pb-2">
+                        <h2 class="text-xl font-bold text-blue-900">Coeficiente de Elasticidad</h2>
+                        <p class="text-sm text-gray-600">Mide la sensibilidad o capacidad de respuesta de una variable de salud (Efecto) ante variaciones porcentuales en una variable de intervención o entorno (Causa).</p>
+                        <div class="mt-2 text-center bg-gray-100 p-2 font-mono rounded text-lg text-indigo-900 font-bold">Fórmula: E = % Δ Variable Dependiente (Efecto) / % Δ Variable Independiente (Causa)</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-slate-50 p-4 rounded-lg space-y-3">
+                            <h3 class="font-bold text-sm text-gray-700 uppercase">Evaluación de Programas de Inmunización</h3>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">% Cambio en Cobertura de Vacunación (Efecto):</label>
+                                <input type="number" id="el-efecto" value="15" step="0.1" class="w-full p-2 border rounded bg-white text-sm" oninput="calcElasticidad()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1">% Cambio en el Financiamiento Asignado (Causa):</label>
+                                <input type="number" id="el-causa" value="10" step="0.1" class="w-full p-2 border rounded bg-white text-sm" oninput="calcElasticidad()">
+                            </div>
+                        </div>
+                        <div class="bg-amber-50/50 p-4 rounded-lg flex flex-col justify-between border border-amber-100">
+                            <h3 class="font-bold text-sm text-amber-800 uppercase">Grado de Sensibilidad</h3>
+                            <div class="text-center my-3">
+                                <span class="text-xs text-gray-500 block">Coeficiente E:</span>
+                                <span id="el-res" class="text-3xl font-black text-amber-600">1.50</span>
+                            </div>
+                            <p id="el-txt" class="text-sm text-gray-700 bg-white p-2 rounded border border-amber-200">Respuesta Elástica (E > 1). El programa es bastante sensible a los cambios presupuestarios.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Pie de página informativo -->
+    <footer class="bg-slate-900 text-gray-400 text-center py-4 text-xs mt-auto border-t border-slate-800">
+        <p>Diseño Web Educativo para la Cátedra de Salud Pública I - UCV</p>
+        <p class="mt-1 text-gray-500">Basado en la literatura de Fayad Camel V. (Estadísticas Médicas y de Salud Pública)</p>
+    </footer>
+
+    <!-- Lógica de Simulación en JavaScript -->
+    <script>
+        // Función para cambiar de pestañas
+        function switchTab(evt, tabName) {
+            const contents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < contents.length; i++) {
+                contents[i].classList.remove("active");
+            }
+            const buttons = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove("active");
+            }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        // 1. Cálculos de Razón
+        function calcRazon() {
+            const a = parseFloat(document.getElementById('razon-a').value) || 0;
+            const b = parseFloat(document.getElementById('razon-b').value) || 0;
+            const resEl = document.getElementById('razon-res');
+            const txtEl = document.getElementById('razon-txt');
+            
+            if (b === 0) {
+                resEl.textContent = "Error";
+                txtEl.textContent = "El denominador (B) no puede ser cero en una razón.";
+                return;
+            }
+            const razon = a / b;
+            resEl.textContent = razon.toFixed(2);
+            txtEl.innerHTML = `Por cada unidad del grupo B (${b}), existen exactamente <strong>${razon.toFixed(2)}</strong> unidades del grupo A (${a}).`;
+        }
+
+        // 2. Cálculos de Proporción
+        function calcProp() {
+            const a = parseFloat(document.getElementById('prop-a').value) || 0;
+            const b = parseFloat(document.getElementById('prop-b').value) || 0;
+            const resEl = document.getElementById('prop-res');
+            const txtEl = document.getElementById('prop-txt');
+            const totalEl = document.getElementById('prop-total');
+            
+            const total = a + b;
+            totalEl.textContent = total;
+            
+            if (total === 0) {
+                resEl.textContent = "Error";
+                txtEl.textContent = "La población total (A + B) no puede ser cero.";
+                return;
+            }
+            const proporcion = a / total;
+            resEl.textContent = proporcion.toFixed(4);
+            txtEl.innerHTML = `El subgrupo A representa una fracción de <strong>${proporcion.toFixed(4)}</strong> respecto al universo total de estudio.`;
+        }
+
+        // 3. Cálculos de Porcentaje
+        function calcPorcentaje() {
+            const a = parseFloat(document.getElementById('per-a').value) || 0;
+            const b = parseFloat(document.getElementById('per-b').value) || 0;
+            const resEl = document.getElementById('per-res');
+            const txtEl = document.getElementById('per-txt');
+            const totalEl = document.getElementById('per-total');
+            
+            const total = a + b;
+            totalEl.textContent = total;
+            
+            if (total === 0) {
+                resEl.textContent = "Error";
+                txtEl.textContent = "El total de la muestra no puede ser cero.";
+                return;
+            }
+            const pct = (a / total) * 100;
+            resEl.textContent = pct.toFixed(1) + "%";
+            txtEl.innerHTML = `Estandarizado: de cada 100 individuos u objetos analizados, aproximadamente <strong>${pct.toFixed(1)}</strong> pertenecen al grupo A.`;
+        }
+
+        // 4. Cálculos de Número Índice
+        function calcIndice() {
+            const base = parseFloat(document.getElementById('ind-base').value) || 0;
+            const actual = parseFloat(document.getElementById('ind-actual').value) || 0;
+            const resEl = document.getElementById('ind-res');
+            const txtEl = document.getElementById('ind-txt');
+            
+            if (base === 0) {
+                resEl.textContent = "Error";
+                txtEl.textContent = "El valor del periodo base referencial no puede ser cero.";
+                return;
+            }
+            const indice = (actual / base) * 100;
+            resEl.textContent = indice.toFixed(1);
+            
+            const dif = indice - 100;
+            if (dif > 0) {
+                txtEl.innerHTML = `El fenómeno experimentó un <strong>incremento del ${dif.toFixed(1)}%</strong> en comparación con el periodo base.`;
+            } else if (dif < 0) {
+                txtEl.innerHTML = `El fenómeno experimentó una <strong>reducción del ${Math.abs(dif).toFixed(1)}%</strong> en comparación con el periodo base.`;
+            } else {
+                txtEl.innerHTML = "El fenómeno se mantiene perfectamente estable con respecto al periodo base.";
+            }
+        }
+
+        // 5. Cálculos de Eficiencia
+        function calcEficiencia() {
+            const outputs = parseFloat(document.getElementById('ef-out').value) || 0;
+            const inputs = parseFloat(document.getElementById('ef-in').value) || 0;
+            const resEl = document.getElementById('ef-res');
+            const txtEl = document.getElementById('ef-txt');
+            
+            if (inputs === 0) {
+                resEl.textContent = "Error";
+                txtEl.textContent = "Los insumos o tiempo (Inputs) no pueden valer cero.";
+                return;
+            }
+            const coef = outputs / inputs;
+            resEl.textContent = coef.toFixed(2);
+            txtEl.innerHTML = `Eficiencia institucional: se generan <strong>${coef.toFixed(2)}</strong> productos sanitarios por cada unidad de insumo/tiempo consumida.`;
+        }
+
+        // 6. Cálculos de Elasticidad
+        function calcElasticidad() {
+            const efecto = parseFloat(document.getElementById('el-efecto').value) || 0;
+            const causa = parseFloat(document.getElementById('el-causa').value) || 0;
+            const resEl = document.getElementById('el-res');
+            const txtEl = document.getElementById('el-txt');
+            
+            if (causa === 0) {
+                resEl.textContent = "Error";
+                txtEl.textContent = "La variación de la causa no puede ser cero.";
+                return;
+            }
+            const e = efecto / causa;
+            resEl.textContent = e.toFixed(2);
+            
+            const absE = Math.abs(e);
+            let clasificacion = "";
+            if (absE > 1) {
+                clasificacion = "Respuesta Elástica (E > 1). Altamente sensible al cambio ambiental.";
+            } else if (absE < 1) {
+                clasificacion = "Respuesta Inelástica (E < 1). Baja sensibilidad ante variaciones.";
+            } else {
+                clasificacion = "Elasticidad Unitaria (E = 1). Cambio exactamente proporcional.";
+            }
+            txtEl.innerHTML = `<strong>${clasificacion}</strong> Por cada 1% de variación en la causa, el efecto sanitario se modifica en un <strong>${absE.toFixed(2)}%</strong>.`;
+        }
+
+        // Forzar cálculo inicial al cargar la página
+        window.onload = function() {
+            calcRazon();
+            calcProp();
+            calcPorcentaje();
+            calcIndice();
+            calcEficiencia();
+            calcElasticidad();
+        }
+    </script>
+</body>
+</html>
